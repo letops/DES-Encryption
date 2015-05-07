@@ -11,11 +11,12 @@
 #define MAXSTR 256
 #define KVAL 50
 
-typedef unsigned long int uli;
+typedef unsigned long int ulongint;
 typedef unsigned int uint;
+typedef unsigned char uchar;
 
-//Función simple para imprimir todas las localidades de un unsigned int array
-void printIntArray(unsigned int * array, int size){
+//Función simple para imprimir todas las localidades de un uint array
+void printIntArray(uint * array, int size){
   int i=0;
   printf("\nArray:\n");
   for (i=0; i<size; i++){
@@ -24,8 +25,8 @@ void printIntArray(unsigned int * array, int size){
   printf("\n");
 }
 
-//Función simple para imprimir todas las localidades de un unsigned long int array
-void printLongArray(unsigned long int * array, int size){
+//Función simple para imprimir todas las localidades de un ulongint array
+void printLongArray(ulongint * array, int size){
   int i=0;
   printf("\nLArray:\n");
   for (i=0; i<size; i++){
@@ -34,39 +35,38 @@ void printLongArray(unsigned long int * array, int size){
   printf("\n");
 }
 
-unsigned long int arrayToLong(unsigned int * array, int arraySize, int cellSize){
+ulongint arrayToLong(uint * array, int arraySize, int cellSize){
   int i;
   unsigned long result = 0;
   for(i=0; i<arraySize; i++){
 
-    unsigned long int temp = array[i];
+    ulongint temp = array[i];
     temp = temp << (cellSize*i);
     result = result | temp;
   }
   return result;
 }
 
-unsigned char * longsToArray(unsigned long int value1, unsigned long int value2, int valueBits, int arraySize){
-  unsigned char *result = malloc(arraySize * sizeof(unsigned int));
+uchar * longsToArray(ulongint value1, ulongint value2, int valueBits, uchar * data, int arraySize){
   int i=0;
   for(i=0; i<(valueBits*2); i++){
     if (i<valueBits){
-      result[i/8] |= (value1 & (1 << i));
+      data[i/8] |= (value1 & (1 << i));
     }
     else{
-      result[i/8] |= (value2 & (1 << (i - valueBits)));
+      data[i/8] |= (value2 & (1 << (i - valueBits)));
     }
   }
-  return result;
+  return data;
 }
 
 //Función para eliminar el MSB de cada byte de la llave
-unsigned int * keyTrim(unsigned int * key, int size){
+uint * keyTrim(uint * key, int size){
   int i=0;
   int mask = 127;
-  unsigned int temporal_value = 0;
-  unsigned int temporal_carrier = 0;
-  unsigned int *result = malloc(7 * sizeof(unsigned int));
+  uint temporal_value = 0;
+  uint temporal_carrier = 0;
+  uint *result = malloc(7 * sizeof(uint));
   for (i=0; i<size; i++){
     temporal_value = key[i] & mask;
     if (i>0){
@@ -81,12 +81,12 @@ unsigned int * keyTrim(unsigned int * key, int size){
 }
 
 //Función que realiza la permutación de una llave con respecto a "choicePermutationTable"
-unsigned long int permutateKey(unsigned long int key){
+ulongint permutateKey(ulongint key){
   int i;
   int position;
-  unsigned long int new_key = 0;
-  unsigned long int mask = 0;
-  unsigned long int value = 0;
+  ulongint new_key = 0;
+  ulongint mask = 0;
+  ulongint value = 0;
   for(i=0; i<56; i++){
     position = choicePermutationTable[i];
     if (position != -1){
@@ -106,16 +106,16 @@ unsigned long int permutateKey(unsigned long int key){
 
 //Función que tiene el objetivo de llenar el arreglo "subkeys" a partir de la funcionalidad
 //  DES de Key Mixing para la creación de una subllave que será utilizada para cada iteración
-void keyMixing(unsigned int * trimmedKey, int size){
-  unsigned long int new_key = arrayToLong(trimmedKey, 7, 8);
-  unsigned long int mask_left = 72057593769492480;
-  unsigned long int mask_right = 268435455;
-  unsigned long int msb_mask = 0;
-  unsigned long int carry = 0;
+void keyMixing(uint * trimmedKey, int size){
+  ulongint new_key = arrayToLong(trimmedKey, 7, 8);
+  ulongint mask_left = 72057593769492480;
+  ulongint mask_right = 268435455;
+  ulongint msb_mask = 0;
+  ulongint carry = 0;
   int i=0;
   for(i=0; i<16; i++){
-    unsigned long int left = (new_key & mask_left) >> 28;
-    unsigned long int right = new_key & mask_right;
+    ulongint left = (new_key & mask_left) >> 28;
+    ulongint right = new_key & mask_right;
 
     int shifts = shiftingBits[i];
     msb_mask = ((int)pow(2, shifts)-1) << 28;
@@ -138,16 +138,16 @@ void keyMixing(unsigned int * trimmedKey, int size){
 
 //Función que tiene el objetivo de llenar el arreglo "subkeys" a partir de la funcionalidad
 //  DES de Key Mixing para la creación de una subllave que será utilizada para cada iteración
-void invKeyMixing(unsigned int * trimmedKey, int size){
-  unsigned long int new_key = arrayToLong(trimmedKey, 7, 8);
-  unsigned long int mask_left = 72057593769492480;
-  unsigned long int mask_right = 268435455;
-  unsigned long int lsb_mask = 0;
-  unsigned long int carry = 0;
+void invKeyMixing(uint * trimmedKey, int size){
+  ulongint new_key = arrayToLong(trimmedKey, 7, 8);
+  ulongint mask_left = 72057593769492480;
+  ulongint mask_right = 268435455;
+  ulongint lsb_mask = 0;
+  ulongint carry = 0;
   int i=0;
   for(i=0; i<16; i++){
-    unsigned long int left = (new_key & mask_left) >> 28;
-    unsigned long int right = new_key & mask_right;
+    ulongint left = (new_key & mask_left) >> 28;
+    ulongint right = new_key & mask_right;
 
     int shifts = shiftingBits[i];
     lsb_mask = ((int)pow(2, shifts)-1);
@@ -169,17 +169,17 @@ void invKeyMixing(unsigned int * trimmedKey, int size){
 }
 
 void calculateSubkeys(){
-  unsigned int * trimmed;
+  uint * trimmed;
   trimmed = keyTrim(DES_KEY, 8);
   keyMixing(trimmed, 7);
   printLongArray(subkeys, 16);
 }
 
 //Función para permutar arrays de información usando una tabla de permutaciones.
-unsigned char * permutateArrayData(unsigned char * data, int size, int * permutationTable ){
+uchar * permutateArrayData(uchar * data, int size, int * permutationTable ){
   int i=0;
-  unsigned char *result = malloc(size * sizeof(unsigned char));
-  unsigned int mask = 0;
+  uchar result[size];
+  uint mask = 0;
   int position = 0;
   int data_bit = 0;
 
@@ -193,14 +193,17 @@ unsigned char * permutateArrayData(unsigned char * data, int size, int * permuta
       result[position/8] = data_bit;
     }
   }
-  return result;
+  for(i=0; i<size;i++){
+    data[i] = result[i];
+  }
+  return data;
 }
 
-//Función para permutar unsigned long ints de información usando una tabla de permutaciones.
-unsigned long int permutateLongData(unsigned long int data, int size, int * permutationTable ){
+//Función para permutar ulongints de información usando una tabla de permutaciones.
+ulongint permutateLongData(ulongint data, int size, int * permutationTable ){
   int i=0;
-  unsigned long int result =0;
-  unsigned int mask = 0;
+  ulongint result =0;
+  uint mask = 0;
   int position = 0;
   int data_bit = 0;
 
@@ -221,12 +224,12 @@ unsigned long int permutateLongData(unsigned long int data, int size, int * perm
   return result;
 }
 
-//Función para permutar unsigned long ints de información usando una tabla de permutaciones.
-unsigned long int expansionLongPermutation(unsigned long int data, int size, int permutationTable[32][2] ){
+//Función para permutar ulongints de información usando una tabla de permutaciones.
+ulongint expansionLongPermutation(ulongint data, int size, int permutationTable[32][2] ){
   int i=0;
   int j=0;
-  unsigned long int result =0;
-  unsigned int mask = 0;
+  ulongint result =0;
+  uint mask = 0;
   int position = 0;
   int data_bit = 0;
 
@@ -249,11 +252,11 @@ unsigned long int expansionLongPermutation(unsigned long int data, int size, int
   return result;
 }
 
-unsigned long int substitutionLong(unsigned long int data, int size){
-  unsigned long int msb_mask = 1<<6;
-  unsigned long int lsb_mask = 1;
-  unsigned long int middle_mask = 30;
-  unsigned long int result = 0;
+ulongint substitutionLong(ulongint data, int size){
+  ulongint msb_mask = 1<<6;
+  ulongint lsb_mask = 1;
+  ulongint middle_mask = 30;
+  ulongint result = 0;
   int i=0;
   int position, row_msb, row_lsb, row, col;
   for(i=0; i<(size/6); i++){
@@ -268,7 +271,7 @@ unsigned long int substitutionLong(unsigned long int data, int size){
   return result;
 }
 
-unsigned long int Feistel(unsigned long int right, int iteration){
+ulongint Feistel(ulongint right, int iteration){
   right = expansionLongPermutation(right, 32, expansionPermutationTable);
   right ^= subkeys[iteration];
   right = substitutionLong(right, 32);
@@ -276,15 +279,15 @@ unsigned long int Feistel(unsigned long int right, int iteration){
   return right;
 }
 
-unsigned char * encrypt(unsigned char * data){
+uchar * encrypt(uchar * data){
   int i=0;
-  unsigned long int middle;
+  ulongint middle;
   data = permutateArrayData(data, 8, initialPermutationTable);
 
-  unsigned int left_array[4] = {data[0], data[1], data[2], data[3]};
-  unsigned int right_array[4] = {data[4], data[5], data[6], data[7]};
-  unsigned long int left = arrayToLong(left_array, 4, 8);
-  unsigned long int right = arrayToLong(right_array, 4, 8);
+  uint left_array[4] = {data[0], data[1], data[2], data[3]};
+  uint right_array[4] = {data[4], data[5], data[6], data[7]};
+  ulongint left = arrayToLong(left_array, 4, 8);
+  ulongint right = arrayToLong(right_array, 4, 8);
 
   for(i=0; i<16; i++){
     middle = right;
@@ -293,20 +296,20 @@ unsigned char * encrypt(unsigned char * data){
     left = middle;
   }
 
-  data = longsToArray(right, left, 32, 8);
+  data = longsToArray(right, left, 32, data, 8);
   data = permutateArrayData(data, 8, finalPermutationTable);
   return data;
 }
 
-unsigned char * decrypt(unsigned char * data){
+uchar * decrypt(uchar * data){
   int i=0;
-  unsigned long int middle;
+  ulongint middle;
   data = permutateArrayData(data, 8, initialPermutationTable);
 
-  unsigned int left_array[4] = {data[0], data[1], data[2], data[3]};
-  unsigned int right_array[4] = {data[4], data[5], data[6], data[7]};
-  unsigned long int left = arrayToLong(left_array, 4, 8);
-  unsigned long int right = arrayToLong(right_array, 4, 8);
+  uint left_array[4] = {data[0], data[1], data[2], data[3]};
+  uint right_array[4] = {data[4], data[5], data[6], data[7]};
+  ulongint left = arrayToLong(left_array, 4, 8);
+  ulongint right = arrayToLong(right_array, 4, 8);
 
   for(i=15; i>=0; i--){
     middle = right;
@@ -315,7 +318,7 @@ unsigned char * decrypt(unsigned char * data){
     left = middle;
   }
 
-  data = longsToArray(right, left, 32, 8);
+  data = longsToArray(right, left, 32, data, 8);
   data = permutateArrayData(data, 8, finalPermutationTable);
   return data;
 }
@@ -327,9 +330,9 @@ int main(int argc, char const *argv[]) {
   FILE * Destiny;
   char OriginName[MAXSTR];
   char DestinyName[MAXSTR];
-  unsigned char buffer[8];
+  uchar buffer[8];
   int bytes_read = 0;
-  unsigned char option = '0';
+  uchar option = '0';
   int exit_bool = 0;
   int actual_byte = 0;
   int i=0;
@@ -368,7 +371,7 @@ int main(int argc, char const *argv[]) {
 
       //Saltar los primeros 54 bytes del documento (headers)
       printf("\nWriting headers...");
-      unsigned char headers[54];
+      uchar headers[54];
       fread(&headers, 1, 54, Origin);
       fwrite(&headers, 1, 54, Destiny);
 
@@ -381,7 +384,7 @@ int main(int argc, char const *argv[]) {
       //Leer de 64 bits en 64s
       bytes_read = fread(&buffer, 1, 8, Origin);
       while(bytes_read != 0){
-        unsigned char * buffer_result;
+        uchar * buffer_result;
 
         if(bytes_read < 8){
           printf("\nBytes read < 8");

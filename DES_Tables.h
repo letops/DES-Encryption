@@ -1,6 +1,6 @@
 //Crear nueva llave, recordar que es inverso su valor, es decir el bit en DES[7] es el más
 // grande de todos
-unsigned int DES_KEY[8] = {128, 128, 128, 128, 128, 128, 128, 128};
+unsigned int DES_KEY[8] = {97, 97, 97, 97, 97, 97, 97, 97};
 
 int expansionPermutationTable[32][2] = {{ 2,48}, { 3,-1}, { 4,-1}, { 5, 7}, { 6, 8}, { 9,-1}, {10,-1}, {11,13},
                                         {12,14}, {15,-1}, {16,-1}, {17,19}, {18,20}, {21,-1}, {22,-1}, {23,25},
