@@ -168,18 +168,10 @@ void invKeyMixing(unsigned int * trimmedKey, int size){
   }
 }
 
-void calculateSubkeys(unsigned char option){
+void calculateSubkeys(){
   unsigned int * trimmed;
   trimmed = keyTrim(DES_KEY, 8);
-
-  if(option == '1'){
-    keyMixing(trimmed, 7);
-    printf("Encrypted keys");
-  }else{
-    invKeyMixing(trimmed, 7);
-    printf("Decrypted keys");
-  }
-
+  keyMixing(trimmed, 7);
   printLongArray(subkeys, 16);
 }
 
@@ -309,7 +301,7 @@ unsigned char * encrypt(unsigned char * data){
 unsigned char * decrypt(unsigned char * data){
   int i=0;
   unsigned long int middle;
-  data = permutateArrayData(data, 8, finalPermutationTable);
+  data = permutateArrayData(data, 8, initialPermutationTable);
 
   unsigned int left_array[4] = {data[0], data[1], data[2], data[3]};
   unsigned int right_array[4] = {data[4], data[5], data[6], data[7]};
@@ -324,7 +316,7 @@ unsigned char * decrypt(unsigned char * data){
   }
 
   data = longsToArray(right, left, 32, 8);
-  data = permutateArrayData(data, 8, initialPermutationTable);
+  data = permutateArrayData(data, 8, finalPermutationTable);
   return data;
 }
 
@@ -375,13 +367,15 @@ int main(int argc, char const *argv[]) {
       }
 
       //Saltar los primeros 54 bytes del documento (headers)
-      printf("\nJump Headers");
-      fseek(Origin, 54, SEEK_SET);
+      printf("\nWriting headers...");
+      unsigned char headers[54];
+      fread(&headers, 1, 54, Origin);
+      fwrite(&headers, 1, 54, Destiny);
 
       //Calcular todos los subkeys
 
       printf("\n\nCalculating subkeys...");
-      calculateSubkeys(option);
+      calculateSubkeys();
       printf("\ncalculated");
 
       //Leer de 64 bits en 64s
@@ -407,14 +401,14 @@ int main(int argc, char const *argv[]) {
       printf("\nAFTER READ");
       //cerrar el archivo destino
       fclose(Destiny);
-      printf("\nProceso Terminado...\n");
+      printf("\n\nFINISH!!\n");
     }else{
-      printf("\nDestino: No se pudo abrir el archivo.\n");
+      printf("\nDESTINY: The file couldn't be opened/created.\n");
     }
     //cerrar el archivo origen
     fclose(Origin);
   }else{
-    printf("\nOrigen: No se pudo abrir el archivo.\n");
+    printf("\nORIGIN: The file couldn't be opened.\n");
   }
 
 }
